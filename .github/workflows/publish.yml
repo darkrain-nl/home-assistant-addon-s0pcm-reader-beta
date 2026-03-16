@@ -65,6 +65,13 @@ jobs:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-tags: true
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        if: >
+          github.event.workflow_run.head_branch == 'beta'
+        with:
+          enable-cache: true
+
       - name: Bump beta version files locally
         id: bump
         if: >
@@ -94,6 +101,9 @@ jobs:
               }
               {print}
             ' CHANGELOG.md > CHANGELOG.tmp && mv CHANGELOG.tmp CHANGELOG.md
+            
+            # Update uv.lock to reflect the new version
+            uv lock
             
             echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
             echo "did_bump=true" >> $GITHUB_OUTPUT
@@ -126,11 +136,11 @@ jobs:
             ${{ github.event.workflow_run.head_branch == 'beta' && '--no-latest' || '' }}
 
       - name: Commit and push bumped version
-        if: env.did_bump == 'true'
+        if: steps.bump.outputs.did_bump == 'true'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add config.yaml pyproject.toml CHANGELOG.md
+          git add config.yaml pyproject.toml CHANGELOG.md uv.lock
           git commit -m "ci: bump beta version to $new_version"
           git push
 
