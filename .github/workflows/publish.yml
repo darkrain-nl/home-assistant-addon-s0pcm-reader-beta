@@ -36,8 +36,13 @@ jobs:
           echo "Detected version: $VERSION"
           
           if [[ "${{ github.event.workflow_run.head_branch }}" == "beta" ]]; then
-            echo "Beta branch push, always building."
-            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            if [[ "$VERSION" =~ -b[0-9]+$ ]]; then
+              echo "Beta version on beta branch, proceeding with build."
+              echo "should_build=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Stable version '$VERSION' on beta branch, skipping build."
+              echo "should_build=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             if git ls-remote --tags origin "v$VERSION" | grep -q .; then
               echo "Tag v$VERSION already exists, skipping build."
