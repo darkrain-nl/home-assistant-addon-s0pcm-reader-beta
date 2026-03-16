@@ -179,12 +179,12 @@ jobs:
         run: |
           # Extract the section from CHANGELOG.md for the current version
           # It looks for "## [version]" and stops at the next "## ["
-          # The tail -n +2 removes the heading line itself so it doesn't duplicate
-          awk "/^## \[${{ steps.version.outputs.version }}\]/{flag=1; print; next} /^## \[/{flag=0} flag" CHANGELOG.md | tail -n +2 > release_notes.md
+          # We use sed to trim leading/trailing empty lines
+          awk '/^## \[${{ steps.version.outputs.version }}\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > release_notes.md
           
-          # If nothing was matched/extracted, just create an empty file so it doesn't fail
+          # If nothing was matched/extracted, provide a fallback
           if [ ! -s release_notes.md ]; then
-            echo "No specific changelog entry found for ${{ steps.version.outputs.version }}." > release_notes.md
+            echo "No specific changelog entry found for version ${{ steps.version.outputs.version }}." > release_notes.md
           fi
 
       - name: Create Stable Release
@@ -209,7 +209,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Pre-release ${{ steps.version.outputs.tag }}
           body_path: release_notes.md
-          generate_release_notes: true
+          generate_release_notes: false
           draft: false
           prerelease: true
           make_latest: false
