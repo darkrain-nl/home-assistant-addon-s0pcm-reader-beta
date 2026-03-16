@@ -204,9 +204,31 @@ jobs:
           prerelease: true
           make_latest: false
 
+  sync-back-to-dev:
+    name: Sync Beta back to Dev
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.head_branch == 'beta' && needs.build.outputs.did_bump == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+          token: ${{ secrets.BETA_SYNC_TOKEN }}
+          fetch-depth: 0
+
+      - name: Merge beta into dev
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          # Fetch all branches to ensure origin/beta is available
+          git fetch origin beta
+          git merge origin/beta --no-ff -m "ci: sync beta back to dev [skip ci]"
+          git push origin dev
+
   sync-to-beta-repo:
     name: Sync to Beta Repository
-    needs: build
+    needs: [build, release]
     runs-on: ubuntu-latest
     if: github.event.workflow_run.head_branch == 'beta'
     steps:
