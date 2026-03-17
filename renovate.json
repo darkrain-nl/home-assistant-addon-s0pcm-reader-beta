@@ -5,7 +5,8 @@
         "config:recommended",
         ":separateMajorReleases",
         ":combinePatchMinorReleases",
-        ":disableDependencyDashboard"
+        ":disableDependencyDashboard",
+        ":rebaseStalePrs"
     ],
     "baseBranchPatterns": [
         "dev"
@@ -40,15 +41,6 @@
         }
     ],
     "packageRules": [
-        {
-            "description": "Fix pydantic lookup timeout by using simple API",
-            "matchPackageNames": [
-                "pydantic"
-            ],
-            "registryUrls": [
-                "https://pypi.org/simple/"
-            ]
-        },
         {
             "matchPackageNames": [
                 "ghcr.io/home-assistant/**"
