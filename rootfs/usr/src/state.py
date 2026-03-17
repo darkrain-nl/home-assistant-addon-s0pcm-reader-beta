@@ -36,6 +36,8 @@ class MeterState(BaseModel):
     today: int = 0
     yesterday: int = 0
     pulsecount: int = 0
+    pps: float = 0.0
+    activity: bool = False
     enabled: bool = True
 
 

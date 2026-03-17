@@ -18,7 +18,7 @@ Where:
 from typing import TypeGuard
 
 # Type Aliases
-type MeterResult = dict[int, dict[str, int]]
+type MeterResult = dict[str, int | dict[int, dict[str, int]]]
 
 
 def is_valid_packet_length(arr: list[str]) -> TypeGuard[list[str]]:
@@ -54,7 +54,13 @@ def parse_s0pcm_packet(datastr: str) -> MeterResult:
     elif len(s0arr) == 10:
         size = 2
 
-    result = {}
+    # interval between telegrams
+    try:
+        interval = int(s0arr[3])
+    except IndexError, ValueError:
+        raise ValueError(f"Cannot parse interval from packet: '{datastr}'") from None
+
+    result = {"interval": interval, "meters": {}}
 
     # Loop through 2/5 s0pcm data
     for count in range(1, size + 1):
@@ -66,12 +72,14 @@ def parse_s0pcm_packet(datastr: str) -> MeterResult:
             raise ValueError(f"Expecting '{expected_marker}', received '{s0arr[offset]}'")
 
         try:
+            pulses_in_interval = int(s0arr[offset + 1])
             pulsecount = int(s0arr[offset + 2])
-        except ValueError:
-            raise ValueError(
-                f"Cannot convert pulsecount '{s0arr[offset + 2]}' into integer for meter {count}"
-            ) from None
+        except IndexError, ValueError:
+            raise ValueError(f"Cannot convert values into integers for meter {count}") from None
 
-        result[count] = {"pulsecount": pulsecount}
+        result["meters"][count] = {
+            "pulses_in_interval": pulses_in_interval,
+            "pulsecount": pulsecount,
+        }
 
     return result

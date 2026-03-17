@@ -10,6 +10,7 @@ from typing import Final
 
 import paho.mqtt.client as mqtt
 
+from constants import MqttTopicSuffix
 from state import AppContext, MeterState
 
 logger = logging.getLogger(__name__)
@@ -190,6 +191,36 @@ def send_meter_discovery(mqttc: mqtt.Client, context: AppContext, meter_id: int,
             mqttc.publish(num_topic, "", retain=True)
             mqttc.publish(num_topic, json.dumps(num_payload), retain=True)
 
+            # Activity Binary Sensor
+            act_uid = f"s0pcm_{base_topic}_{meter_id}_activity"
+            act_topic = f"{discovery_prefix}/binary_sensor/{base_topic}/{act_uid}/config"
+            act_payload = {
+                "name": f"{instancename} Activity",
+                "unique_id": act_uid,
+                "device": device_info,
+                "device_class": "moving",
+                "entity_category": "diagnostic",
+                "state_topic": f"{base_topic}/{meter_id}/{MqttTopicSuffix.ACTIVITY}",
+                "payload_on": "ON",
+                "payload_off": "OFF",
+                "off_delay": 1,
+            }
+            mqttc.publish(act_topic, json.dumps(act_payload), retain=True)
+
+            # Pulses Per Second (PPS) Sensor
+            pps_uid = f"s0pcm_{base_topic}_{meter_id}_pps"
+            pps_topic = f"{discovery_prefix}/sensor/{base_topic}/{pps_uid}/config"
+            pps_payload = {
+                "name": f"{instancename} Pulses Per Second",
+                "unique_id": pps_uid,
+                "device": device_info,
+                "entity_category": "diagnostic",
+                "state_topic": f"{base_topic}/{meter_id}/{MqttTopicSuffix.PPS}",
+                "unit_of_measurement": "pulses/s",
+                "icon": "mdi:pulse",
+            }
+            mqttc.publish(pps_topic, json.dumps(pps_payload), retain=True)
+
     logger.info(f"Sent discovery for Meter {meter_id} ({instancename})")
     return instancename
 
@@ -223,5 +254,14 @@ def cleanup_meter_discovery(mqttc: mqtt.Client, context: AppContext, meter_id: i
     num_uid = f"s0pcm_{base_topic}_{meter_id}_total_config"
     num_topic = f"{discovery_prefix}/number/{base_topic}/{num_uid}/config"
     mqttc.publish(num_topic, "", retain=True)
+
+    # Clear diagnostics
+    act_uid = f"s0pcm_{base_topic}_{meter_id}_activity"
+    act_topic = f"{discovery_prefix}/binary_sensor/{base_topic}/{act_uid}/config"
+    mqttc.publish(act_topic, "", retain=True)
+
+    pps_uid = f"s0pcm_{base_topic}_{meter_id}_pps"
+    pps_topic = f"{discovery_prefix}/sensor/{base_topic}/{pps_uid}/config"
+    mqttc.publish(pps_topic, "", retain=True)
 
     logger.debug(f"Cleared MQTT discovery for Meter {meter_id}")

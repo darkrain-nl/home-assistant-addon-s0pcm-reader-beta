@@ -107,13 +107,15 @@ class TaskReadSerial(threading.Thread):
 
         try:
             parsed_data = parse_s0pcm_packet(datastr)
-        except ValueError as e:
+            interval = parsed_data["interval"]
+            meters = parsed_data["meters"]
+        except (ValueError, KeyError) as e:
             self.app_context.set_error(f"Invalid Packet: {e}. Packet: '{datastr}'", category="serial")
             return
 
         with self.app_context.lock:
-            for meter_id, data in parsed_data.items():
-                self._update_meter(meter_id, data["pulsecount"])
+            for meter_id, data in meters.items():
+                self._update_meter(meter_id, data["pulsecount"], data["pulses_in_interval"], interval)
 
             # Update shared state snapshot for MQTT
             self.app_context.state_share = self.app_context.state.model_copy(deep=True)
@@ -124,7 +126,7 @@ class TaskReadSerial(threading.Thread):
         # Signal MQTT task that new data is available
         self._trigger.set()
 
-    def _update_meter(self, meter_id: int, pulsecount: int) -> None:
+    def _update_meter(self, meter_id: int, pulsecount: int, pulses_in_interval: int, interval: int) -> None:
         """
         Update logic for a single meter.
 
@@ -133,6 +135,8 @@ class TaskReadSerial(threading.Thread):
         Args:
             meter_id: The ID of the meter to update.
             pulsecount: The current pulsecount from the device.
+            pulses_in_interval: The number of pulses received in the last interval.
+            interval: The duration of the last interval in seconds.
         """
         # Ensure meter exists
         if meter_id not in self.app_context.state.meters:
@@ -151,6 +155,15 @@ class TaskReadSerial(threading.Thread):
             # Note: context.state.date update should ideally happen once.
             # We'll update it here so subsequent meters in the same packet also see the change.
             self.app_context.state.date = today
+
+        # Calculate Pulses Per Second
+        if interval > 0:
+            pps = round(pulses_in_interval / interval, 3)
+            meter.pps = pps
+            meter.activity = pulses_in_interval > 0
+        else:
+            meter.pps = 0.0
+            meter.activity = pulses_in_interval > 0
 
         # Check delta and update
         if pulsecount > meter.pulsecount:
@@ -174,6 +187,9 @@ class TaskReadSerial(threading.Thread):
                     category="serial",
                 )
 
+            # Note: We don't use the delta here if it reset, we just sync the pulsecount
+            # but we DO add what we received. Actually, if it reset to 0 and sends 10,
+            # we should add 10.
             delta = pulsecount
             meter.pulsecount = pulsecount
             meter.total += delta

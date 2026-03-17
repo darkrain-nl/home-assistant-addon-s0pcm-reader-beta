@@ -52,6 +52,8 @@ class TestSerialPacketParsing:
         context = state_module.get_context()
         assert 1 in context.state.meters
         assert context.state.meters[1].total == 100
+        assert context.state.meters[1].pps == 0.0  # (0 pulses / 10s)
+        assert context.state.meters[1].activity is False  # 0 pulses in interval
 
     def test_invalid_packet_sets_error(self, s0pcm_packets, mocker):
         context = state_module.get_context()
@@ -67,24 +69,27 @@ class TestPulseCountLogic:
         context = state_module.get_context()
         context.state.meters[1] = state_module.MeterState(pulsecount=100, total=1000, today=50)
         task = TaskReadSerial(context, None, None)
-        task._update_meter(1, 110)
+        task._update_meter(1, 110, 10, 10)
         assert context.state.meters[1].total == 1010
         assert context.state.meters[1].today == 60
+        assert context.state.meters[1].pps == 1.0
+        assert context.state.meters[1].activity is True
 
     def test_pulse_reset_detection(self):
         context = state_module.get_context()
         context.state.meters[1] = state_module.MeterState(pulsecount=100, total=1000, today=50)
         task = TaskReadSerial(context, None, None)
-        task._update_meter(1, 10)  # Restarted (pulsecount reset to 10)
+        task._update_meter(1, 10, 10, 20)  # Restarted (pulsecount reset to 10)
         # Total should increase by 10
         assert context.state.meters[1].total == 1010
+        assert context.state.meters[1].pps == 0.5
 
     def test_pulse_anomaly(self):
         """Test pulsecount anomaly (lower but not 0) (lines 162-165)."""
         context = state_module.get_context()
         context.state.meters[1] = state_module.MeterState(pulsecount=100, total=1000)
         task = TaskReadSerial(context, None, None)
-        task._update_meter(1, 90)  # Lower than 100, not 0
+        task._update_meter(1, 90, 0, 10)  # Lower than 100, not 0
         # Should record error
         assert context.lasterror_serial is not None
         assert "Pulsecount anomaly" in context.lasterror_serial
@@ -95,7 +100,7 @@ class TestPulseCountLogic:
     def test_update_meter_uninitialized(self):
         context = state_module.AppContext()
         task = TaskReadSerial(context, None, None)
-        task._update_meter(1, 5)
+        task._update_meter(1, 5, 5, 10)
         assert 1 in context.state.meters
         assert context.state.meters[1].total == 5
 
@@ -153,7 +158,7 @@ class TestDayChange:
         context.state.meters[1] = state_module.MeterState(pulsecount=100, total=1000, today=50)
 
         task = TaskReadSerial(context, None, None)
-        task._update_meter(1, 110)
+        task._update_meter(1, 110, 10, 10)
 
         assert context.state.meters[1].yesterday == 50
         assert context.state.meters[1].today == 10
@@ -239,7 +244,7 @@ def test_update_meter_reset_logging(serial_task_missing):
 
     # Pulsecount 0 triggers reset logic
     with patch("serial_handler.logger"):
-        serial_task_missing._update_meter(1, 0)
+        serial_task_missing._update_meter(1, 0, 0, 10)
 
         assert context.lasterror_serial is not None
         assert "S0PCM Reset detected" in context.lasterror_serial
