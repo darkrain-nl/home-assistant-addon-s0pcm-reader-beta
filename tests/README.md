@@ -105,7 +105,7 @@ The S0PCM Reader supports `socket://<host>:<port>` URLs in the `device` configur
 
 ### 2. Standalone Verification Suite
 For full end-to-end testing, we use a dedicated Docker Compose stack located in `tests/standalone/`. This stack includes:
-- **App**: The S0PCM Reader configured for standalone mode.
+- **App**: The S0PCM Reader configured for standalone mode (can be pulled from `ghcr.io/darkrain-nl/s0pcm-reader-standalone`).
 - **Simulator**: A Python-based TCP server (`simulator.py`) that generates virtual S0PCM packets.
 - **MQTT**: A Mosquitto broker with a healthcheck configuration.
 

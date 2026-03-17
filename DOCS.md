@@ -33,10 +33,7 @@ If you are not using Home Assistant OS/Supervisor, you can run this as a standal
 ```yaml
 services:
   s0pcm-reader:
-    # Build locally from the repository
-    build:
-      context: .
-      dockerfile: Dockerfile.standalone
+    image: ghcr.io/darkrain-nl/s0pcm-reader-standalone:latest
     container_name: s0pcm-reader
     restart: unless-stopped
     devices:

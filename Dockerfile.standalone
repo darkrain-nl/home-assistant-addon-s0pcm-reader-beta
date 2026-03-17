@@ -1,5 +1,11 @@
 FROM python:3.14-alpine
 
+LABEL org.opencontainers.image.title="S0PCM Reader (Standalone)" \
+      org.opencontainers.image.description="Standalone S0PCM reader for non-Home Assistant environments" \
+      org.opencontainers.image.source="https://github.com/darkrain-nl/home-assistant-addon-s0pcm-reader" \
+      org.opencontainers.image.authors="darkrain-nl" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
 WORKDIR /
 
 COPY pyproject.toml uv.lock /tmp/uv/
