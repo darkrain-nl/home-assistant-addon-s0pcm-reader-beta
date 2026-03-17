@@ -4,13 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.1.1-b4] - 2026-03-17
+## [4.2.0-b0] - 2026-03-17
 
 ### Added
+- **Diagnostic Sensors**: Introduced two new real-time sensors per meter to improve hardware observability:
+  - **Pulse Activity**: A binary sensor (`moving` class) that provides immediate visual feedback when pulses are detected in the latest measurement interval.
+  - **PPS (Pulses Per Second)**: A high-resolution diagnostic sensor showing the raw hardware throughput, useful for fine-tuning meter settings.
+- **Testing**: Added a comprehensive diagnostic test suite and expanded integration coverage to ensure 100% reliability for new sensor data.
 - **Standalone Mode**: Introduced a dedicated Docker build (`Dockerfile.standalone`) and automated publishing to GHCR for running the app in non-Home Assistant environments.
 - **Workflow**: Added dynamic run-naming to the `Publish` workflow to explicitly show the triggering branch (e.g., `main` or `beta`) in the GitHub Actions UI.
 
 ### Changed
+- **Consistency**: Renamed internal state fields and MQTT topic suffixes for diagnostic data to follow a unified "PPS/Activity" naming convention.
 - **Dependencies**: Updated various CI dependencies, including `docker/setup-qemu-action` to v4 and `astral-sh/setup-uv` to the latest version.
 
 ## [4.1.0] - 2026-03-16
