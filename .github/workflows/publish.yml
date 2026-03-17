@@ -1,4 +1,5 @@
 name: Publish
+run-name: Publish (${{ github.event.workflow_run.head_branch }})
 
 on:
   workflow_run:
