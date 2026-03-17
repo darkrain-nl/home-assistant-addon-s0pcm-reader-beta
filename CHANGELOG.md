@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.1.1-b2] - 2026-03-17
 
 ### Added
-- Preparing for next development cycle.
+- **Standalone Mode**: Introduced a dedicated Docker build (`Dockerfile.standalone`) and automated publishing to GHCR for running the app in non-Home Assistant environments.
+- **Workflow**: Added dynamic run-naming to the `Publish` workflow to explicitly show the triggering branch (e.g., `main` or `beta`) in the GitHub Actions UI.
+
+### Changed
+- **Dependencies**: Updated various CI dependencies, including `docker/setup-qemu-action` to v4 and `astral-sh/setup-uv` to the latest version.
 
 ## [4.1.0] - 2026-03-16
 
