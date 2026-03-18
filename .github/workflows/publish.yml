@@ -154,16 +154,21 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 
-      - name: Get version
+      - name: Get version and build_from
         id: version
         run: |
           VERSION=$(grep '^version:' config.yaml | sed 's/version: *"\(.*\)"/\1/')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          
+          BUILD_FROM=$(grep "^  ${{ matrix.arch }}:" build.yaml | awk '{print $2}' | tr -d '"')
+          echo "build_from=$BUILD_FROM" >> "$GITHUB_OUTPUT"
 
       - name: Build image
         uses: home-assistant/builder/actions/build-image@master
         with:
           arch: ${{ matrix.arch }}
+          build-args: |
+            BUILD_FROM=${{ steps.version.outputs.build_from }}
           container-registry-password: ${{ secrets.GITHUB_TOKEN }}
           image: ${{ matrix.image }}
           image-tags: |
