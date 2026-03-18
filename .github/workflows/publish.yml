@@ -54,8 +54,8 @@ jobs:
             fi
           fi
 
-  build:
-    name: Build App
+  prepare:
+    name: Prepare App Build
     needs: check
     runs-on: ubuntu-latest
     if: >
@@ -64,6 +64,7 @@ jobs:
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
       did_bump: ${{ steps.bump.outputs.did_bump }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -124,23 +125,6 @@ jobs:
             echo "did_bump=false" >> $GITHUB_ENV
           fi
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and Push
-        uses: home-assistant/builder@master
-        with:
-          args: |
-            --amd64 \
-            --aarch64 \
-            --target /data \
-            --cosign \
-            ${{ github.event.workflow_run.head_branch == 'beta' && '--no-latest' || '' }}
-
       - name: Commit and push bumped version
         if: steps.bump.outputs.did_bump == 'true'
         run: |
@@ -150,9 +134,73 @@ jobs:
           git commit -m "ci: bump beta version to $new_version"
           git push
 
+      - name: Get build matrix
+        id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@master
+        with:
+          architectures: '["amd64", "aarch64"]'
+          image-name: ghcr.io/${{ github.repository_owner }}/addon-s0pcm_reader
+
+  build-arch:
+    name: Build ${{ matrix.arch }} image
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' config.yaml | sed 's/version: *"\(.*\)"/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        uses: home-assistant/builder/actions/build-image@master
+        with:
+          arch: ${{ matrix.arch }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image: ${{ matrix.image }}
+          image-tags: |
+            ${{ steps.version.outputs.version }}
+            ${{ github.event.workflow_run.head_branch == 'main' && 'latest' || '' }}
+          push: "true"
+          version: ${{ steps.version.outputs.version }}
+
+  manifest:
+    name: Publish multi-arch manifest
+    needs: [prepare, build-arch]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' config.yaml | sed 's/version: *"\(.*\)"/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish multi-arch manifest
+        uses: home-assistant/builder/actions/publish-multi-arch-manifest@master
+        with:
+          architectures: '["amd64", "aarch64"]'
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image-name: ghcr.io/${{ github.repository_owner }}/addon-s0pcm_reader
+          image-tags: |
+            ${{ steps.version.outputs.version }}
+            ${{ github.event.workflow_run.head_branch == 'main' && 'latest' || '' }}
+
   build-standalone:
     name: Build Standalone
-    needs: check
+    needs: [check, prepare]
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.conclusion == 'success' &&
@@ -197,7 +245,7 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: [build, build-standalone]
+    needs: [manifest, build-standalone]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -267,9 +315,9 @@ jobs:
 
   sync-back-to-dev:
     name: Sync Beta back to Dev
-    needs: [build, release]
+    needs: [prepare, release]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.head_branch == 'beta' && needs.build.outputs.did_bump == 'true'
+    if: github.event.workflow_run.head_branch == 'beta' && needs.prepare.outputs.did_bump == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -289,7 +337,7 @@ jobs:
 
   sync-to-beta-repo:
     name: Sync to Beta Repository
-    needs: [build, release]
+    needs: [manifest, release]
     runs-on: ubuntu-latest
     if: github.event.workflow_run.head_branch == 'beta'
     steps:
