@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Consistency**: Renamed internal state fields and MQTT topic suffixes for diagnostic data to follow a unified "PPS/Activity" naming convention.
 - **Dependencies**: Updated various CI dependencies, including `docker/setup-qemu-action` to v4 and `astral-sh/setup-uv` to the latest version.
+- **CI/CD Build System**: Migrated the main GitHub Actions publishing workflow away from the deprecated monolithic `home-assistant/builder` action to the officially recommended, modular reusable sub-actions (`prepare-multi-arch-matrix`, `build-image`, and `publish-multi-arch-manifest`). Also resolved a latent race condition that could have caused the standalone image to push an older version tag.
 
 ## [4.1.0] - 2026-03-16
 
