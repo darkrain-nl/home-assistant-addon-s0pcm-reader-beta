@@ -139,7 +139,7 @@ jobs:
         uses: home-assistant/builder/actions/prepare-multi-arch-matrix@master
         with:
           architectures: '["amd64", "aarch64"]'
-          image-name: ghcr.io/${{ github.repository_owner }}/addon-s0pcm_reader
+          image-name: addon-s0pcm_reader
 
   build-arch:
     name: Build ${{ matrix.arch }} image
@@ -198,7 +198,7 @@ jobs:
         with:
           architectures: '["amd64", "aarch64"]'
           container-registry-password: ${{ secrets.GITHUB_TOKEN }}
-          image-name: ghcr.io/${{ github.repository_owner }}/addon-s0pcm_reader
+          image-name: addon-s0pcm_reader
           image-tags: |
             ${{ steps.version.outputs.version }}
             ${{ github.event.workflow_run.head_branch == 'main' && 'latest' || '' }}
