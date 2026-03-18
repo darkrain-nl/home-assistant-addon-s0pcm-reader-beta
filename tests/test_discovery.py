@@ -58,6 +58,20 @@ def test_send_meter_discovery(mocker):
     assert payload["payload_available"] == "online"
     assert payload["payload_not_available"] == "offline"
 
+    # Verify purge of obsolete diagnostic sensors (PPS and Activity)
+    activity_clear = [
+        c
+        for c in mock_mqttc.publish.call_args_list
+        if "binary_sensor/s0pcm/s0pcm_s0pcm_1_activity/config" in str(c) and c[0][1] == ""
+    ]
+    pps_clear = [
+        c
+        for c in mock_mqttc.publish.call_args_list
+        if "sensor/s0pcm/s0pcm_s0pcm_1_pps/config" in str(c) and c[0][1] == ""
+    ]
+    assert activity_clear
+    assert pps_clear
+
 
 def test_discovery_disabled(mocker):
     """Test behavior when discovery is disabled."""
@@ -143,6 +157,9 @@ def test_cleanup_meter_discovery_enabled():
     assert any("sensor" in t for t in topics)
     assert any("text" in t for t in topics)
     assert any("number" in t for t in topics)
+    # Check for diagnostic sensor cleanup
+    assert any("binary_sensor" in t and "activity" in t for t in topics)
+    assert any("sensor" in t and "pps" in t for t in topics)
 
 
 def test_cleanup_meter_discovery_disabled():

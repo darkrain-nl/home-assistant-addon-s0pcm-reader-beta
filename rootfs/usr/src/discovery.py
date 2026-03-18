@@ -129,6 +129,12 @@ def send_meter_discovery(mqttc: mqtt.Client, context: AppContext, meter_id: int,
     for char in "/+#":
         instancename = instancename.replace(char, "")
 
+    # Purge obsolete diagnostic sensors (PPS and Activity)
+    for p_type, p_key in [("binary_sensor", "activity"), ("sensor", "pps")]:
+        p_uid = f"s0pcm_{base_topic}_{meter_id}_{p_key}"
+        p_topic = f"{discovery_prefix}/{p_type}/{base_topic}/{p_uid}/config"
+        mqttc.publish(p_topic, "", retain=True)
+
     for subkey in ["total", "today", "yesterday"]:
         unique_id = f"s0pcm_{base_topic}_{meter_id}_{subkey}"
         topic = f"{discovery_prefix}/sensor/{base_topic}/{unique_id}/config"
@@ -223,5 +229,11 @@ def cleanup_meter_discovery(mqttc: mqtt.Client, context: AppContext, meter_id: i
     num_uid = f"s0pcm_{base_topic}_{meter_id}_total_config"
     num_topic = f"{discovery_prefix}/number/{base_topic}/{num_uid}/config"
     mqttc.publish(num_topic, "", retain=True)
+
+    # Clear obsolete diagnostic sensors
+    for p_type, p_key in [("binary_sensor", "activity"), ("sensor", "pps")]:
+        p_uid = f"s0pcm_{base_topic}_{meter_id}_{p_key}"
+        p_topic = f"{discovery_prefix}/{p_type}/{base_topic}/{p_uid}/config"
+        mqttc.publish(p_topic, "", retain=True)
 
     logger.debug(f"Cleared MQTT discovery for Meter {meter_id}")
