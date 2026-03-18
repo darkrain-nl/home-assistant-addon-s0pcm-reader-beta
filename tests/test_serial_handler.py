@@ -52,8 +52,6 @@ class TestSerialPacketParsing:
         context = state_module.get_context()
         assert 1 in context.state.meters
         assert context.state.meters[1].total == 100
-        assert context.state.meters[1].pps == 0.0  # (0 pulses / 10s)
-        assert context.state.meters[1].activity is False  # 0 pulses in interval
 
     def test_invalid_packet_sets_error(self, s0pcm_packets, mocker):
         context = state_module.get_context()
@@ -72,8 +70,6 @@ class TestPulseCountLogic:
         task._update_meter(1, 110, 10, 10)
         assert context.state.meters[1].total == 1010
         assert context.state.meters[1].today == 60
-        assert context.state.meters[1].pps == 1.0
-        assert context.state.meters[1].activity is True
 
     def test_pulse_reset_detection(self):
         context = state_module.get_context()
@@ -82,7 +78,6 @@ class TestPulseCountLogic:
         task._update_meter(1, 10, 10, 20)  # Restarted (pulsecount reset to 10)
         # Total should increase by 10
         assert context.state.meters[1].total == 1010
-        assert context.state.meters[1].pps == 0.5
 
     def test_pulse_anomaly(self):
         """Test pulsecount anomaly (lower but not 0) (lines 162-165)."""

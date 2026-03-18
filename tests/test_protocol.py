@@ -57,6 +57,11 @@ class TestPacketParsing:
         with pytest.raises(ValueError, match="Packet has invalid length"):
             parse_s0pcm_packet("ID:8237:I:10:M1:0:100:M2:0:50:M3:0:25")
 
+    def test_invalid_interval(self):
+        """Test handling of packets with non-integer interval."""
+        with pytest.raises(ValueError, match="Cannot parse interval"):
+            parse_s0pcm_packet("ID:8237:I:ABC:M1:0:100:M2:0:50")
+
     def test_invalid_markers(self):
         """Test handling of packets with incorrect markers."""
         # M1 marker missing/wrong

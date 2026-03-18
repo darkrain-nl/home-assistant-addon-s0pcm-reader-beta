@@ -156,15 +156,6 @@ class TaskReadSerial(threading.Thread):
             # We'll update it here so subsequent meters in the same packet also see the change.
             self.app_context.state.date = today
 
-        # Calculate Pulses Per Second
-        if interval > 0:
-            pps = round(pulses_in_interval / interval, 3)
-            meter.pps = pps
-            meter.activity = pulses_in_interval > 0
-        else:
-            meter.pps = 0.0
-            meter.activity = pulses_in_interval > 0
-
         # Check delta and update
         if pulsecount > meter.pulsecount:
             logger.debug(f"Pulsecount changed from '{meter.pulsecount}' to '{pulsecount}' for meter {meter_id}")

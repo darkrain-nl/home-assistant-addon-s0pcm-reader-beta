@@ -55,8 +55,6 @@ class TestMqttTopicSuffix:
         assert MqttTopicSuffix.TODAY == "today"
         assert MqttTopicSuffix.YESTERDAY == "yesterday"
         assert MqttTopicSuffix.PULSECOUNT == "pulsecount"
-        assert MqttTopicSuffix.PPS == "pps"
-        assert MqttTopicSuffix.ACTIVITY == "activity"
 
     def test_enum_membership(self):
         """Test enum membership."""
@@ -64,9 +62,7 @@ class TestMqttTopicSuffix:
         assert "TODAY" in MqttTopicSuffix.__members__
         assert "YESTERDAY" in MqttTopicSuffix.__members__
         assert "PULSECOUNT" in MqttTopicSuffix.__members__
-        assert "PPS" in MqttTopicSuffix.__members__
-        assert "ACTIVITY" in MqttTopicSuffix.__members__
-        assert len(list(MqttTopicSuffix)) == 6
+        assert len(list(MqttTopicSuffix)) == 4
 
     def test_iteration(self):
         """Test that we can iterate over enum."""

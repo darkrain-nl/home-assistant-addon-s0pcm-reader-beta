@@ -28,5 +28,3 @@ class MqttTopicSuffix(StrEnum):
     TODAY = "today"
     YESTERDAY = "yesterday"
     PULSECOUNT = "pulsecount"
-    PPS = "pps"
-    ACTIVITY = "activity"

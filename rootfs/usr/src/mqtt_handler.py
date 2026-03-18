@@ -347,16 +347,6 @@ class TaskDoMQTT(threading.Thread):
                     else:
                         jsondata[topic_field] = val
 
-            # Diagnostic topics (PPS and Activity)
-            for topic_field in [MqttTopicSuffix.PPS, MqttTopicSuffix.ACTIVITY]:
-                val = getattr(mstate, topic_field.value)
-                old_val = getattr(prev_mstate, topic_field.value) if prev_mstate else None
-                if val != old_val:
-                    topic = f"{context.config.mqtt.base_topic}/{mid}/{topic_field.value}"
-                    payload = ("ON" if val else "OFF") if topic_field == MqttTopicSuffix.ACTIVITY else str(val)
-                    self._state.mqttc.publish(topic, payload, retain=True)
-                    logger.debug(f"MQTT Publish Diagnostic: topic='{topic}', value='{payload}'")
-
             # Name state
             if not prev_mstate or mstate.name != prev_mstate.name:
                 topic = f"{context.config.mqtt.base_topic}/{mid}/name"

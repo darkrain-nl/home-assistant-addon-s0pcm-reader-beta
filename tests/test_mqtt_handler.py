@@ -363,15 +363,13 @@ class TestPublishingLogic:
         mqtt_task.app_context.config = make_test_config(split_topic=True)
 
         state_snapshot = state_module.AppState()
-        state_snapshot.meters[1] = state_module.MeterState(
-            name="Water", total=1000, today=50, pulses_per_second=1.2, activity=True
-        )
+        state_snapshot.meters[1] = state_module.MeterState(name="Water", total=1000, today=50)
 
         mqtt_task._publish_measurements(state_snapshot, None)
 
         # Verify split topics were published
         assert mqtt_task._state.mqttc.publish.called
-        assert mqtt_task._state.mqttc.publish.call_count >= 5  # total, today, pulsecount, pps, activity
+        assert mqtt_task._state.mqttc.publish.call_count >= 3  # total, today, pulsecount
 
         # Regression check: Ensure topics do NOT contain function/object string representations
         published_topics = [str(call.args[0]) for call in mqtt_task._state.mqttc.publish.call_args_list]
@@ -383,8 +381,6 @@ class TestPublishingLogic:
         # Ensure correct suffixes are present
         assert any(t.endswith("/total") for t in published_topics)
         assert any(t.endswith("/today") for t in published_topics)
-        assert any(t.endswith("/pps") for t in published_topics)
-        assert any(t.endswith("/activity") for t in published_topics)
 
     def test_publish_measurements_disabled_meter(self, mqtt_task):
         """Test _publish_measurements skip disabled meter."""
