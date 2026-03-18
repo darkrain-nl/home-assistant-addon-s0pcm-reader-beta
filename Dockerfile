@@ -1,4 +1,6 @@
-ARG BUILD_FROM
+# Default to scratch to suppress 'InvalidDefaultArgInFrom' warnings.
+# The true base image is always injected by builder using build.yaml.
+ARG BUILD_FROM="scratch"
 FROM ${BUILD_FROM}
 
 WORKDIR /
