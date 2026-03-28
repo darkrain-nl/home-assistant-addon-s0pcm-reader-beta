@@ -6,8 +6,7 @@ on:
     - cron: '0 0 1 1 *'
   workflow_dispatch: # Allow running manually
 
-permissions:
-  contents: read
+permissions: read-all
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -26,6 +25,7 @@ jobs:
       - name: Update copyright year in LICENSE
         run: |
           YEAR=$(date +%Y)
+          echo "YEAR=${YEAR}" >> $GITHUB_ENV
           # Update the end year in "Copyright 2021-YYYY" format
           sed -i -E "s/Copyright 2021-[0-9]{4}/Copyright 2021-${YEAR}/" LICENSE
 
