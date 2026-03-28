@@ -7,7 +7,8 @@ WORKDIR /
 COPY pyproject.toml uv.lock /tmp/uv/
 COPY rootfs /
 
-COPY --from=ghcr.io/astral-sh/uv:0.11.2 /uv /uvx /bin/
+# 0.11.2
+COPY --from=ghcr.io/astral-sh/uv@sha256:c4f5de312ee66d46810635ffc5df34a1973ba753e7241ce3a08ef979ddd7bea5 /uv /uvx /bin/
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     cd /tmp/uv && uv export --frozen --no-dev --no-emit-project --no-hashes | \
