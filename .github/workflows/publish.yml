@@ -9,6 +9,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
 
 permissions:
   contents: write
@@ -19,13 +20,14 @@ jobs:
   check:
     name: Check if Release Needed
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'push'
     outputs:
       should_build: ${{ steps.check.outputs.should_build }}
     steps:
       - name: Checkout config.yaml
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ env.HEAD_BRANCH }}
           sparse-checkout: |
             config.yaml
           sparse-checkout-cone-mode: false
@@ -36,7 +38,7 @@ jobs:
           VERSION=$(grep '^version:' config.yaml | sed 's/version: *"\(.*\)"/\1/')
           echo "Detected version: $VERSION"
           
-          if [[ "${{ github.event.workflow_run.head_branch }}" == "beta" ]]; then
+          if [[ "$HEAD_BRANCH" == "beta" ]]; then
             if [[ "$VERSION" =~ -b[0-9]+$ ]]; then
               echo "Beta version on beta branch, proceeding with build."
               echo "should_build=true" >> "$GITHUB_OUTPUT"
@@ -69,20 +71,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ env.HEAD_BRANCH }}
           fetch-tags: true
 
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         if: >
-          github.event.workflow_run.head_branch == 'beta'
+          env.HEAD_BRANCH == 'beta'
         with:
           enable-cache: true
 
       - name: Bump beta version files locally
         id: bump
         if: >
-          github.event.workflow_run.head_branch == 'beta'
+          env.HEAD_BRANCH == 'beta'
         run: |
           VERSION=$(grep '^version:' config.yaml | sed 's/version: *"\(.*\)"/\1/')
           echo "Current version: $VERSION"
@@ -152,7 +154,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ env.HEAD_BRANCH }}
 
       - name: Get version and build_from
         id: version
@@ -173,7 +175,7 @@ jobs:
           image: ${{ matrix.image }}
           image-tags: |
             ${{ steps.version.outputs.version }}
-            ${{ github.event.workflow_run.head_branch == 'main' && 'latest' || '' }}
+            ${{ env.HEAD_BRANCH == 'main' && 'latest' || '' }}
           push: "true"
           version: ${{ steps.version.outputs.version }}
 
@@ -185,7 +187,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ env.HEAD_BRANCH }}
 
       - name: Get version
         id: version
@@ -201,7 +203,7 @@ jobs:
           image-name: addon-s0pcm_reader
           image-tags: |
             ${{ steps.version.outputs.version }}
-            ${{ github.event.workflow_run.head_branch == 'main' && 'latest' || '' }}
+            ${{ env.HEAD_BRANCH == 'main' && 'latest' || '' }}
 
   build-standalone:
     name: Build Standalone
@@ -214,7 +216,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ env.HEAD_BRANCH }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
@@ -244,7 +246,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/darkrain-nl/s0pcm-reader-standalone:${{ steps.version.outputs.version }}
-            ghcr.io/darkrain-nl/s0pcm-reader-standalone:${{ github.event.workflow_run.head_branch == 'beta' && 'beta' || 'latest' }}
+            ghcr.io/darkrain-nl/s0pcm-reader-standalone:${{ env.HEAD_BRANCH == 'beta' && 'beta' || 'latest' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -256,7 +258,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ env.HEAD_BRANCH }}
           fetch-tags: true
 
       - name: Read version from config.yaml
@@ -294,7 +296,7 @@ jobs:
       - name: Create Stable Release
         if: >
           steps.check_tag.outputs.exists == 'false' &&
-          github.event.workflow_run.head_branch == 'main'
+          env.HEAD_BRANCH == 'main'
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
@@ -307,7 +309,7 @@ jobs:
       - name: Create Beta Pre-release
         if: >
           steps.check_tag.outputs.exists == 'false' &&
-          github.event.workflow_run.head_branch == 'beta'
+          env.HEAD_BRANCH == 'beta'
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
@@ -322,7 +324,7 @@ jobs:
     name: Sync Beta back to Dev
     needs: [prepare, release]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.head_branch == 'beta' && needs.prepare.outputs.did_bump == 'true'
+    if: env.HEAD_BRANCH == 'beta' && needs.prepare.outputs.did_bump == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -344,12 +346,12 @@ jobs:
     name: Sync to Beta Repository
     needs: [manifest, release]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.head_branch == 'beta'
+    if: env.HEAD_BRANCH == 'beta'
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ env.HEAD_BRANCH }}
           path: main-repo
           persist-credentials: false
           fetch-depth: 0
