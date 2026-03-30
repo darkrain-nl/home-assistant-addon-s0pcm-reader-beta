@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.1] - 2026-03-30
+
+### Added
+- **Security**: Integrated **GitHub CodeQL** static analysis to automatically detect potential security vulnerabilities and bugs in the Python codebase.
+- **Branch Protection**: Added a `.github/CODEOWNERS` file to enforce ownership-based code reviews, aligning with OpenSSF Best Practices.
+
+### Changed
+- **Security Hardening**: Performed a comprehensive audit and hardening of all GitHub Actions workflows to meet OpenSSF Scorecard requirements:
+    - Implemented **SHA-pinning** for all community and official actions (including `home-assistant/builder`) to prevent supply chain attacks.
+    - Enforced the **Principle of Least Privilege** by setting `permissions: read-all` at the top level and using granular job-level permissions.
+    - Mitigated dangerous workflow patterns in `publish.yml` by sanitizing untrusted context variables (`github.event.workflow_run`).
+- **Security Policy**: Updated `SECURITY.md` with explicit vulnerability reporting links and coordinated disclosure timelines.
+
+### Fixed
+- **Automation**: Fixed a bug in the `update_copyright.yml` workflow where the current year was not being correctly exported to the environment.
+
 ## [4.2.0] - 2026-03-28
 
 ### Added

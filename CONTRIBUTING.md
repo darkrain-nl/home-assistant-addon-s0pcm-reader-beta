@@ -27,7 +27,8 @@ rootfs/usr/src/          # Application source code
   ├── protocol.py        # S0PCM telegram parsing
   ├── state.py           # Internal state management
   ├── constants.py       # Shared constants
-  └── healthcheck.py     # Docker health monitoring
+  ├── healthcheck.py     # Docker health monitoring
+  └── utils.py           # Utility functions & logging setup
 tests/                   # Test suite (see tests/README.md)
 translations/            # Home Assistant UI translations
 config.yaml              # Home Assistant App manifest

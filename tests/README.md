@@ -30,12 +30,6 @@ docker run --rm s0pcm-reader-test pytest tests/ --cov=rootfs/usr/src --cov-repor
 # Save coverage to file
 docker run --rm s0pcm-reader-test pytest tests/ --cov=rootfs/usr/src --cov-report=term-missing | Out-File -FilePath coverage.txt -Encoding utf8
 
-**Reading the report:**
-- **Stmts**: Total code lines.
-- **Miss**: Lines not tested.
-- **Cover**: % covered.
-- **Missing**: Specific lines to target for better coverage.
-
 # Linux / Mac (Bash)
 ./tests/docker-test.sh
 ```
@@ -91,7 +85,7 @@ docker run --rm s0pcm-reader-test
 ```
 
 ### 3. Continuous Integration
-Tests run automatically via GitHub Actions on every push to `main` and `dev`. Results are uploaded to **Codecov**.
+Tests run automatically via GitHub Actions on every push to `main`, `beta`, and `dev`. Results are uploaded to **Codecov**.
 
 ---
 
@@ -111,7 +105,7 @@ For full end-to-end testing, we use a dedicated Docker Compose stack located in 
 
 To run the verification suite:
 ```bash
-docker compose -f tests/standalone/docker-compose.yml up --build --exit-code-from app
+docker compose -f tests/standalone/docker-compose.yml up --build --exit-code-from verifier
 ```
 
 ### 3. Integrated Test Runners
@@ -142,4 +136,4 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 ---
-*Last updated: 2026-02-15*
+*Last updated: 2026-03-29*
