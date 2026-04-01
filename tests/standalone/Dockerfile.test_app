@@ -4,7 +4,7 @@ WORKDIR /
 COPY pyproject.toml uv.lock /tmp/uv/
 COPY rootfs /
 # 0.11.2
-COPY --from=ghcr.io/astral-sh/uv@sha256:c4f5de312ee66d46810635ffc5df34a1973ba753e7241ce3a08ef979ddd7bea5 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv@sha256:90bbb3c16635e9627f49eec6539f956d70746c409209041800a0280b93152823 /uv /uvx /bin/
 RUN --mount=type=cache,target=/root/.cache/uv \
     cd /tmp/uv && uv export --frozen --no-dev --no-emit-project --no-hashes | \
     uv pip install --system --no-cache -r - && \
