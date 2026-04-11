@@ -1,30 +1,23 @@
 name: Publish
-run-name: Publish (${{ github.event.workflow_run.head_branch }})
 
 on:
-  workflow_run:
-    workflows: ["Tests"]
-    types: [completed]
-    branches: [main, beta]
+  workflow_call:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-
-permissions: read-all
+  HEAD_BRANCH: ${{ github.ref_name }}
 
 jobs:
   check:
     name: Check if Release Needed
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.event == 'push'
     outputs:
       should_build: ${{ steps.check.outputs.should_build }}
+      is_beta: ${{ steps.check.outputs.is_beta }}
     steps:
       - name: Checkout config.yaml
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ env.HEAD_BRANCH }}
           sparse-checkout: |
             config.yaml
           sparse-checkout-cone-mode: false
@@ -34,23 +27,21 @@ jobs:
         run: |
           VERSION=$(grep '^version:' config.yaml | sed 's/version: *"\(.*\)"/\1/')
           echo "Detected version: $VERSION"
-          
-          if [[ "$HEAD_BRANCH" == "beta" ]]; then
-            if [[ "$VERSION" =~ -b[0-9]+$ ]]; then
-              echo "Beta version on beta branch, proceeding with build."
-              echo "should_build=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "Stable version '$VERSION' on beta branch, skipping build."
-              echo "should_build=false" >> "$GITHUB_OUTPUT"
-            fi
+
+          # Determine if this is a beta version
+          if [[ "$VERSION" =~ -b[0-9]+$ ]]; then
+            echo "is_beta=true" >> "$GITHUB_OUTPUT"
           else
-            if git ls-remote --tags origin "v$VERSION" | grep -q .; then
-              echo "Tag v$VERSION already exists, skipping build."
-              echo "should_build=false" >> "$GITHUB_OUTPUT"
-            else
-              echo "Tag v$VERSION does not exist, proceeding with build."
-              echo "should_build=true" >> "$GITHUB_OUTPUT"
-            fi
+            echo "is_beta=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Check if tag already exists
+          if git ls-remote --tags origin "v$VERSION" | grep -q .; then
+            echo "Tag v$VERSION already exists, skipping build."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag v$VERSION does not exist, proceeding with build."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
           fi
 
   prepare:
@@ -59,9 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      needs.check.outputs.should_build == 'true'
+    if: needs.check.outputs.should_build == 'true'
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
       did_bump: ${{ steps.bump.outputs.did_bump }}
@@ -70,20 +59,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ env.HEAD_BRANCH }}
           fetch-tags: true
 
       - name: Install uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
-        if: >
-          env.HEAD_BRANCH == 'beta'
+        if: needs.check.outputs.is_beta == 'true'
         with:
           enable-cache: true
 
       - name: Bump beta version files locally
         id: bump
-        if: >
-          env.HEAD_BRANCH == 'beta'
+        if: needs.check.outputs.is_beta == 'true'
         run: |
           VERSION=$(grep '^version:' config.yaml | sed 's/version: *"\(.*\)"/\1/')
           echo "Current version: $VERSION"
@@ -144,7 +130,7 @@ jobs:
 
   build-arch:
     name: Build ${{ matrix.arch }} image
-    needs: prepare
+    needs: [check, prepare]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -156,8 +142,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ env.HEAD_BRANCH }}
 
       - name: Get version and build_from
         id: version
@@ -178,13 +162,13 @@ jobs:
           image: ${{ matrix.image }}
           image-tags: |
             ${{ steps.version.outputs.version }}
-            ${{ env.HEAD_BRANCH == 'main' && 'latest' || '' }}
+            ${{ needs.check.outputs.is_beta == 'false' && 'latest' || '' }}
           push: "true"
           version: ${{ steps.version.outputs.version }}
 
   manifest:
     name: Publish multi-arch manifest
-    needs: [prepare, build-arch]
+    needs: [check, prepare, build-arch]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -193,8 +177,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ env.HEAD_BRANCH }}
 
       - name: Get version
         id: version
@@ -210,7 +192,7 @@ jobs:
           image-name: addon-s0pcm_reader
           image-tags: |
             ${{ steps.version.outputs.version }}
-            ${{ env.HEAD_BRANCH == 'main' && 'latest' || '' }}
+            ${{ needs.check.outputs.is_beta == 'false' && 'latest' || '' }}
 
   build-standalone:
     name: Build Standalone
@@ -219,14 +201,10 @@ jobs:
     permissions:
       contents: read
       packages: write
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      needs.check.outputs.should_build == 'true'
+    if: needs.check.outputs.should_build == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: ${{ env.HEAD_BRANCH }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
@@ -256,13 +234,13 @@ jobs:
           push: true
           tags: |
             ghcr.io/darkrain-nl/s0pcm-reader-standalone:${{ steps.version.outputs.version }}
-            ghcr.io/darkrain-nl/s0pcm-reader-standalone:${{ env.HEAD_BRANCH == 'beta' && 'beta' || 'latest' }}
+            ghcr.io/darkrain-nl/s0pcm-reader-standalone:${{ needs.check.outputs.is_beta == 'true' && 'beta' || 'latest' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   release:
     name: Create GitHub Release
-    needs: [manifest, build-standalone]
+    needs: [check, manifest, build-standalone]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -270,7 +248,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ env.HEAD_BRANCH }}
           fetch-tags: true
 
       - name: Read version from config.yaml
@@ -308,7 +285,7 @@ jobs:
       - name: Create Stable Release
         if: >
           steps.check_tag.outputs.exists == 'false' &&
-          env.HEAD_BRANCH == 'main'
+          needs.check.outputs.is_beta == 'false'
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
@@ -321,7 +298,7 @@ jobs:
       - name: Create Beta Pre-release
         if: >
           steps.check_tag.outputs.exists == 'false' &&
-          env.HEAD_BRANCH == 'beta'
+          needs.check.outputs.is_beta == 'true'
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
@@ -336,7 +313,7 @@ jobs:
     name: Sync Beta back to Dev
     needs: [prepare, release]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.head_branch == 'beta' && needs.prepare.outputs.did_bump == 'true'
+    if: github.ref_name == 'beta' && needs.prepare.outputs.did_bump == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -356,14 +333,13 @@ jobs:
 
   sync-to-beta-repo:
     name: Sync to Beta Repository
-    needs: [manifest, release]
+    needs: [check, manifest, release]
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.head_branch == 'beta'
+    if: github.ref_name == 'beta'
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ env.HEAD_BRANCH }}
           path: main-repo
           persist-credentials: false
           fetch-depth: 0
