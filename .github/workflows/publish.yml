@@ -31,6 +31,7 @@ jobs:
           # Determine if this is a beta version
           if [[ "$VERSION" =~ -b[0-9]+$ ]]; then
             echo "is_beta=true" >> "$GITHUB_OUTPUT"
+<<<<<<< HEAD
           else
             echo "is_beta=false" >> "$GITHUB_OUTPUT"
           fi
@@ -42,6 +43,21 @@ jobs:
           else
             echo "Tag v$VERSION does not exist, proceeding with build."
             echo "should_build=true" >> "$GITHUB_OUTPUT"
+=======
+            # Beta versions always proceed — prepare job will auto-bump
+            echo "Beta version detected, proceeding with build."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_beta=false" >> "$GITHUB_OUTPUT"
+            # Stable versions: only build if tag doesn't already exist
+            if git ls-remote --tags origin "v$VERSION" | grep -q .; then
+              echo "Tag v$VERSION already exists, skipping build."
+              echo "should_build=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Tag v$VERSION does not exist, proceeding with build."
+              echo "should_build=true" >> "$GITHUB_OUTPUT"
+            fi
+>>>>>>> beta
           fi
 
   prepare:
@@ -142,6 +158,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+<<<<<<< HEAD
+=======
+        with:
+          ref: ${{ github.ref_name }}
+>>>>>>> beta
 
       - name: Get version and build_from
         id: version
@@ -177,6 +198,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+<<<<<<< HEAD
+=======
+        with:
+          ref: ${{ github.ref_name }}
+>>>>>>> beta
 
       - name: Get version
         id: version
@@ -205,6 +231,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+<<<<<<< HEAD
+=======
+        with:
+          ref: ${{ github.ref_name }}
+>>>>>>> beta
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
@@ -248,6 +279,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+<<<<<<< HEAD
+=======
+          ref: ${{ github.ref_name }}
+>>>>>>> beta
           fetch-tags: true
 
       - name: Read version from config.yaml
