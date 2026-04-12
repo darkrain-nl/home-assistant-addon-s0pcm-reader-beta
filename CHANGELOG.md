@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.2.3-b3] - 2026-04-12
+## [4.2.3] - 2026-04-12
+### Fixed
+- **MQTT**: Fixed an issue where meter discovery payloads lacked the required `"name"` property on the linked device info schema, silencing a Home Assistant core warning.
+
 ### Changed
 - **Dependencies**: Dependency updates
 
