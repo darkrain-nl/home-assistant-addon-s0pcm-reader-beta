@@ -122,7 +122,10 @@ def send_meter_discovery(mqttc: mqtt.Client, context: AppContext, meter_id: int,
     base_topic = context.config.mqtt.base_topic
     discovery_prefix = context.config.mqtt.discovery_prefix
 
-    device_info = {"identifiers": [base_topic]}  # Link to global device
+    device_info = {
+        "identifiers": [base_topic],
+        "name": "S0PCM Reader",
+    }  # Link to global device
     raw_name = meter_state.name
     instancename = str(meter_id) if not raw_name or str(raw_name).lower() == "none" else str(raw_name)
     # Defensive: strip MQTT special characters from topic names
