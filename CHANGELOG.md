@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI/CD**: Switched all publish pipeline decisions (release type, image tags, version bumping) from branch-based logic to version-based logic, enabling stable releases to be published directly from the `beta` branch.
 - **Security**: Applied explicit least-privilege permissions to all test workflow jobs instead of relying on a top-level default.
 
+
 ## [4.2.1] - 2026-03-30
 
 ### Added
