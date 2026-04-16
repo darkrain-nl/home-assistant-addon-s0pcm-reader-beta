@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Testing**: Resolved a race condition in the integration test suite that caused intermittent timeouts during broker restarts.
 - **Testing**: Fixed a legacy Python 2 syntax error in the integration test `verifier.py` script.
 
+### Workflow
+- **Automation**: Added a `release.sh` script to automate the entire release process (dev → beta → main), including branch syncing, CI monitoring, and PR management.
+
 ## [4.2.3] - 2026-04-12
 ### Fixed
 - **MQTT**: Fixed an issue where meter discovery payloads lacked the required `"name"` property on the linked device info schema, silencing a Home Assistant core warning.
