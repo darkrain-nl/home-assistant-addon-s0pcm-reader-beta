@@ -69,12 +69,17 @@ gh run watch "$RUN_ID"
 if [ "$IS_BETA" = false ]; then
     echo -e "${YELLOW}Proceeding with STABLE release to main...${NC}"
     
-    echo -e "${YELLOW}Creating Pull Request from 'beta' to 'main'...${NC}"
-    PR_URL=$(gh pr create --base main --head beta --title "Release v$VERSION" --body "Automated stable release PR for version $VERSION. Triggered via release.sh")
-    echo -e "${GREEN}PR Created: $PR_URL${NC}"
+    PR_URL=$(gh pr list --base main --head beta --state open --json url --jq '.[0].url')
+    if [ -z "$PR_URL" ]; then
+        echo -e "${YELLOW}Creating Pull Request from 'beta' to 'main'...${NC}"
+        PR_URL=$(gh pr create --base main --head beta --title "Release v$VERSION" --body "Automated stable release PR for version $VERSION. Triggered via release.sh")
+    else
+        echo -e "${YELLOW}Existing open PR found: $PR_URL${NC}"
+    fi
+    echo -e "${GREEN}PR Ready: $PR_URL${NC}"
 
     echo -e "${YELLOW}Merging PR into 'main'...${NC}"
-    gh pr merge "$PR_URL" --merge --auto
+    gh pr merge "$PR_URL" --merge
 
     echo -e "${YELLOW}Switching to 'main' and pulling...${NC}"
     git checkout main
