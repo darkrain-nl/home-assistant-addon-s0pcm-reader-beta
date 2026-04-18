@@ -4,12 +4,12 @@ build_from:
   amd64: ghcr.io/home-assistant/amd64-base-python:3.14-alpine3.23
 labels:
   io.hass.type: addon
-  org.opencontainers.image.title: "S0PCM Reader"
+  org.opencontainers.image.title: "S0PCM Reader (Beta)"
   org.opencontainers.image.description: "S0PCM reader based on docker-s0pcm-reader"
-  org.opencontainers.image.source: "https://github.com/darkrain-nl/home-assistant-addon-s0pcm-reader"
+  org.opencontainers.image.source: "https://github.com/darkrain-nl/home-assistant-addon-s0pcm-reader-beta"
   org.opencontainers.image.authors: "darkrain-nl"
-  org.opencontainers.image.url: "https://github.com/darkrain-nl/home-assistant-addon-s0pcm-reader"
-  org.opencontainers.image.documentation: "https://github.com/darkrain-nl/home-assistant-addon-s0pcm-reader/blob/main/DOCS.md"
+  org.opencontainers.image.url: "https://github.com/darkrain-nl/home-assistant-addon-s0pcm-reader-beta"
+  org.opencontainers.image.documentation: "https://github.com/darkrain-nl/home-assistant-addon-s0pcm-reader-beta/blob/main/DOCS.md"
   org.opencontainers.image.licenses: "Apache-2.0"
 
 cosign:
