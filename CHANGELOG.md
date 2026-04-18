@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Dependencies**: Dependency updates
 
+### Fixed
+- **Documentation**: Fixed a broken Troubleshooting link in `README.md`, corrected a legacy config key reference in `DOCS.md`, and updated `CONTRIBUTING.md` and `tests/README.md` to show Linux/bash commands as the primary option.
+
 ## [4.2.4] - 2026-04-16
 ### Added
 - **Quality Assurance**: Integrated a new `lint` command into `./tests/docker-test.sh` for easy Docker-based code formatting and linting using Ruff.

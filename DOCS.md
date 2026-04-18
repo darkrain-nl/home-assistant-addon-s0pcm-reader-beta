@@ -125,7 +125,7 @@ Once you have created the **Template Sensor** (Recipe 1) with correct device cla
 > [!NOTE]
 > This section is only for users who **disable MQTT Discovery** or prefer manual YAML configuration.
 
-If you set `mqtt_discovery: false`, you can manually configure sensors in your `configuration.yaml`:
+If you disable **MQTT Auto-Discovery** (set `discovery` to `false` under **Advanced MQTT Settings**), you can manually configure sensors in your `configuration.yaml`:
 
 ```yaml
 mqtt:
